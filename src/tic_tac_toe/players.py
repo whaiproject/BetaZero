@@ -75,3 +75,7 @@ class OptimalPlayer:
                     best_score = score
                     best_move = move
             return best_score, best_move
+
+class DummyPlayer(Player):
+    def get_move(self, board):
+        return random.choice(board.generate_possible_moves())
