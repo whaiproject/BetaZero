@@ -5,22 +5,60 @@ sys.path.append(parent_dir)
 
 from tic_tac_toe import TicTacToeHeadless
 from players import HumanPlayer, AIPlayer, RandomPlayer, OptimalPlayer
+import numpy as np
 import torch
+import pandas as pd
 
-# Initialize players (modify as needed)
-player1 = RandomPlayer()  # or AIPlayer()
-player2 = RandomPlayer()  # or AIPlayer()
+def process_game_positions(positions):
+    # Convert positions to a PyTorch tensor
+    positions_tensor = torch.from_numpy(np.stack(positions))
 
-# Initialize the terminal game manager
-#terminal_game_manager = TicTacToeTerminal(player1, player2)
-#terminal_game_manager.play()
+    # Adjust positions for player turn
+    for i in range(positions_tensor.shape[0]):
+        positions_tensor[i] *= (-1) ** i
 
-print("Generating games...")
-game_manager = TicTacToeHeadless(player1, player2)
-positions, z = game_manager.play()
+    # Calculate actions based on position changes
+    actions = -positions_tensor[1:] - positions_tensor[:-1]
 
-print("Converting to tensors...")
-positions = torch.tensor(positions)
+    return positions_tensor[:-1], actions
 
-print(z)
-print(positions)
+def collect_game_data(num_games, player1, player2):
+    all_states = []
+    all_actions = []
+
+    for _ in range(num_games):
+        game_manager = TicTacToeHeadless(player1, player2)
+
+        raw_positions, _ = game_manager.play()
+        states, actions = process_game_positions(raw_positions)
+
+        all_states.extend(states)
+        all_actions.extend(actions)
+
+    return all_states, all_actions
+
+def save_to_csv(states, actions, filename='tic_tac_toe_data.csv'):
+    # Flatten the states and actions for CSV format
+    flattened_states = [state.flatten().numpy() for state in states]
+    flattened_actions = [action.flatten().numpy() for action in actions]
+
+    print("Num. states generated: ", len(flattened_states))
+
+    # Create a DataFrame
+    df = pd.DataFrame({
+        'State': [' '.join(map(str, state)) for state in flattened_states],
+        'Action': [' '.join(map(str, action)) for action in flattened_actions]
+    })
+
+    # Save to CSV
+    df.to_csv(filename, index=False)
+
+# Example usage
+num_games = 4
+player1 = OptimalPlayer(1)
+player2 = OptimalPlayer(-1)
+all_states, all_actions = collect_game_data(num_games, player1, player2)
+
+save_to_csv(all_states, all_actions)
+
+
