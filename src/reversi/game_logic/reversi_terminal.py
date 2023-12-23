@@ -22,9 +22,9 @@ class ReversiTerminal:
             moves = self.board.generate_possible_moves(self.current_player)
 
             if moves:
-                action_matrix = player.get_move(self.board)
+                row, col = player.get_move(self.board)
                 try:
-                    self.board = self.board.make_move(action_matrix, self.current_player)
+                    self.board = self.board.make_move(row, col, self.current_player)
                 except ValueError as e:
                     print(e)
                     continue
@@ -51,7 +51,7 @@ class ReversiTerminal:
 def main():
     # Example game
     player1 = RandomPlayer(1)
-    player2 = RandomPlayer(-1)
+    player2 = HumanPlayer(-1)
     game = ReversiTerminal(player1, player2, size=3)
     game.play()
 

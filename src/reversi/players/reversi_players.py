@@ -1,12 +1,5 @@
-import sys
-from pathlib import Path
-parent_dir = str(Path(__file__).resolve().parent.parent)
-sys.path.append(parent_dir)
-
-import numpy as np
-import random
 from abc import ABC, abstractmethod
-from game_logic.reversi_board import ReversiBoard
+import random
 
 class ReversiPlayer(ABC):
     @abstractmethod
@@ -23,9 +16,7 @@ class HumanPlayer(ReversiPlayer):
                 row = int(input(f"Enter the row (0-{board.size-1}): "))
                 col = int(input(f"Enter the column (0-{board.size-1}): "))
                 if 0 <= row < board.size and 0 <= col < board.size and board.is_valid_move(row, col, self.symbol):
-                    action_matrix = np.zeros((board.size, board.size), dtype=int)
-                    action_matrix[row, col] = 1
-                    return action_matrix
+                    return row, col
                 else:
                     print("Invalid move. Please enter a valid row and column within the board boundaries.")
             except ValueError:
@@ -36,18 +27,12 @@ class RandomPlayer(ReversiPlayer):
         self.symbol = symbol  # 1 for X, -1 for O
 
     def get_move(self, board):
+        import random
         moves = board.generate_possible_moves(self.symbol)
-        if moves:
-            row, col = random.choice(moves)
-            action_matrix = np.zeros((board.size, board.size), dtype=int)
-            action_matrix[row, col] = 1
-            return action_matrix
-        else:
-            return np.zeros((board.size, board.size), dtype=int)
-
+        return random.choice(moves) if moves else (None, None)
 
 # Optimal player
-class OptimalPlayer(ReversiPlayer):
+class OptimalPlayer:
     def __init__(self, symbol):
         self.symbol = symbol  # 1 for X, -1 for O
 
@@ -88,15 +73,3 @@ class OptimalPlayer(ReversiPlayer):
                     best_score = score
                     best_move = move
             return best_score, best_move
-
-
-def main():
-    # Example game
-    board = ReversiBoard(size=4)
-    print(board)
-    player = HumanPlayer(1)
-    action = player.get_move(board)
-    print(action)
-
-if __name__ == "__main__":
-    main()

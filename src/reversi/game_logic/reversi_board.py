@@ -40,14 +40,11 @@ class ReversiBoard:
                 break
         return valid
 
-    def make_move(self, action_matrix, player):
-        row, col = np.where(action_matrix == 1)
-        row, col = int(row), int(col)
-
+    def make_move(self, row, col, player):
         if not self.is_valid_move(row, col, player):
             raise ValueError("Invalid move")
 
-        new_board = ReversiBoard(board=self)
+        new_board = ReversiBoard(self)
         new_board.board[row][col] = player
         directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
         for dr, dc in directions:
