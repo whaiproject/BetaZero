@@ -10,8 +10,6 @@ import tkinter as tk
 from tkinter import messagebox
 import numpy as np
 
-# Import your ReversiBoard and player classes here
-# from your_reversi_modules import ReversiBoard, HumanPlayer, RandomPlayer
 
 class ReversiGUI:
     def __init__(self, player1, player2, size=8):
