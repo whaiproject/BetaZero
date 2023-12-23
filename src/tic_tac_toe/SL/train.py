@@ -1,13 +1,15 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import random
+from neural_networks import TicTacToeNet
 import torch
 from torch.utils.data import Dataset, DataLoader
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import random_split
-import itertools
 from tqdm import tqdm
+from datetime import datetime
+import os
 
 class TicTacToeDataset(Dataset):
     def __init__(self, csv_file, state_shape, action_shape):
@@ -56,35 +58,6 @@ class TicTacToeDataset(Dataset):
         state, action = self.dataframe[idx]
         return state.clone(), action.clone()
 
-# Example usage
-# dataset = TicTacToeDataset('tic_tac_toe_data.csv', (3, 3), (3, 3))
-# state, action = dataset[0]
-
-
-
-# # Example usage
-# state_shape = (3, 3)  # Example for a 3x3 Tic Tac Toe board
-# action_shape = (3, 3) # actions are also represented in a 3x3 structure
-# dataset = TicTacToeDataset('tic_tac_toe_data.csv', state_shape, action_shape)
-# dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
-
-# for states, actions in dataloader:
-#     print(states)
-#     print(actions)
-#     break
-
-class TicTacToeNet(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
-        super(TicTacToeNet, self).__init__()
-        self.fc1 = nn.Linear(input_size, hidden_size)
-        self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(hidden_size, output_size)
-
-    def forward(self, x):
-        x = self.fc1(x)
-        x = self.relu(x)
-        x = self.fc2(x)
-        return x
 
 state_shape = (3, 3)  # Example for a 3x3 Tic Tac Toe board
 action_shape = (3, 3) # actions are also represented in a 3x3 structure
@@ -92,7 +65,7 @@ action_shape = (3, 3) # actions are also represented in a 3x3 structure
 # Parameters
 validation_split = 0.2  # Percentage of data for validation
 batch_size = 128
-val_batch_size = 64
+val_batch_size = 1000
 
 # Create the full dataset
 full_dataset = TicTacToeDataset('tic_tac_toe_data.csv', state_shape, action_shape)
@@ -207,7 +180,7 @@ def train_model(model, train_loader, val_loader, epochs, learning_rate):
 
 # Example usage
 input_size = 9  # 3x3 Tic Tac Toe board flattened
-hidden_size = 512 #64  # Example size of hidden layer
+hidden_size = 256 #64  # Example size of hidden layer
 # with 64 neurons it wasn't able to generalize well on the validation set
 # with 20 it's better
 output_size = 9  # Assuming 3x3 action space
@@ -215,7 +188,7 @@ output_size = 9  # Assuming 3x3 action space
 model = TicTacToeNet(input_size, hidden_size, output_size)
 
 # Assuming you have created 'dataloader' from TicTacToeDataset
-epochs = 1000  # Number of epochs to train
+epochs = 500  # Number of epochs to train
 learning_rate = 0.0001  # Learning rate
 
 print("Length of train dataset: ", len(train_dataset))
@@ -223,3 +196,19 @@ print("Length of val dataset: ", len(val_dataset))
 print("Training model...")
 train_model(model, train_loader, val_loader, epochs, learning_rate)
 print("Done!")
+
+
+# Save the model
+
+# Current timestamp
+current_timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+
+# Model filename with current timestamp
+model_filename = f'src/tic_tac_toe/SL/models/tic_tac_toe_model_{current_timestamp}.pth'
+
+# Create the 'models' directory if it doesn't exist
+if not os.path.exists('src/tic_tac_toe/SL/models/'):
+    os.makedirs('src/tic_tac_toe/SL/models/')
+
+# Assuming 'model' is your trained model instance
+torch.save(model, model_filename)

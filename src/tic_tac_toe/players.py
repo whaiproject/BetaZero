@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from tic_tac_toe_board import TicTacToeBoard 
 import random
+import torch
 
 class Player(ABC):
     @abstractmethod
@@ -20,14 +21,6 @@ class HumanPlayer(Player):
             except ValueError:
                 print("Invalid input. Please enter a number between 0 and 2.")
 
-class AIPlayer(Player):
-    def get_move(self, board):
-        # Implement AI logic here. For now, we'll return the first available move.
-        for i in range(3):
-            for j in range(3):
-                if board.board[i][j] == 0:
-                    return i, j
-                
 # Useful for baseline
 class RandomPlayer(Player):
     def get_move(self, board):
@@ -79,3 +72,33 @@ class OptimalPlayer:
 class DummyPlayer(Player):
     def get_move(self, board):
         return random.choice(board.generate_possible_moves())
+    
+class AIPlayer(Player):
+    def __init__(self, path_to_model, symbol):
+        super().__init__()
+        self.model = torch.load(path_to_model)
+        self.model.eval()
+        self.symbol = symbol
+        # /Users/lb1223/Library/CloudStorage/OneDrive-ImperialCollegeLondon/Desktop/whaiproject/BetaZero/src/tic_tac_toe/SL/models/tic_tac_toe_model_2023-12-23_13-26-47.pth
+
+    def get_move(self, board):
+        state = self.symbol * torch.tensor(board.board).float()
+        actions = self.model(state.flatten()).reshape((3, 3))
+        rows, cols = actions.size()
+
+        actions = actions.flatten()
+
+        # Step 2: Sort the flattened tensor in descending order
+        sorted_values, sorted_indices = torch.sort(actions, descending=True)
+
+        # Step 3: Map the sorted indices back to the original 2D shape
+        actions = [((idx // cols).item(), (idx % cols).item()) for idx in sorted_indices]
+        valid_actions = board.generate_possible_moves()
+
+        action = [a for a in actions if a in valid_actions][0]
+
+        print(action)
+        print(actions)
+        print(valid_actions)
+        #action = (self.symbol * torch.nonzero(action)).tolist()[0]
+        return action
