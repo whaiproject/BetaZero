@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import random_split
 import itertools
+from tqdm import tqdm
 
 class TicTacToeDataset(Dataset):
     def __init__(self, csv_file, state_shape, action_shape):
@@ -107,21 +108,27 @@ train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=val_batch_size, shuffle=False)
 
+
 def train_model(model, train_loader, val_loader, epochs, learning_rate):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-    # Lists to store loss values
+    # Lists to store loss and accuracy values
     train_losses = []
     val_losses = []
+    train_accuracies = []
+    val_accuracies = []
 
     plt.ion()  # Turn on interactive mode
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))  # Two subplots
 
-    for epoch in range(epochs):
+    epoch_pbar = tqdm(range(epochs), desc="Overall Progress", unit="epoch")
+    for epoch in epoch_pbar:
         # Training phase
         model.train()
         train_loss = 0.0
+        correct_train = 0
+        total_train = 0
         for states, actions in train_loader:
             states = states.view(states.size(0), -1)
             actions = actions.view(actions.size(0), -1).argmax(dim=1)
@@ -133,10 +140,15 @@ def train_model(model, train_loader, val_loader, epochs, learning_rate):
             optimizer.step()
 
             train_loss += loss.item()
+            _, predicted = torch.max(outputs.data, 1)
+            total_train += actions.size(0)
+            correct_train += (predicted == actions).sum().item()
 
         # Validation phase
         model.eval()
         val_loss = 0.0
+        correct_val = 0
+        total_val = 0
         with torch.no_grad():
             for states, actions in val_loader:
                 states = states.view(states.size(0), -1)
@@ -146,32 +158,56 @@ def train_model(model, train_loader, val_loader, epochs, learning_rate):
                 loss = criterion(outputs, actions)
                 val_loss += loss.item()
 
-        # Calculate average losses
+                _, predicted = torch.max(outputs.data, 1)
+                total_val += actions.size(0)
+                correct_val += (predicted == actions).sum().item()
+
+        # Calculate average losses and accuracies
         train_loss_avg = train_loss / len(train_loader)
+        train_acc = correct_train / total_train
         val_loss_avg = val_loss / len(val_loader)
+        val_acc = correct_val / total_val
 
         train_losses.append(train_loss_avg)
         val_losses.append(val_loss_avg)
+        train_accuracies.append(train_acc)
+        val_accuracies.append(val_acc)
 
-        # Plotting
-        ax.clear()
-        ax.plot(train_losses, label='Training Loss')
-        ax.plot(val_losses, label='Validation Loss')
-        ax.set_xlabel('Epochs')
-        ax.set_ylabel('Loss')
-        ax.set_title('Training and Validation Loss')
-        ax.legend()
+        # Update progress bar description
+        epoch_pbar.set_postfix({
+            'Train Acc': f'{train_acc:.4f}',
+            'Val Acc': f'{val_acc:.4f}',
+            'Train Loss': f'{train_loss_avg:.4f}',
+            'Val Loss': f'{val_loss_avg:.4f}'
+        })
+
+        # Update plots
+        ax1.clear()
+        ax1.plot(train_losses, label='Training Loss')
+        ax1.plot(val_losses, label='Validation Loss')
+        ax1.set_xlabel('Epochs')
+        ax1.set_ylabel('Loss')
+        ax1.set_title('Training and Validation Loss')
+        ax1.legend()
+
+        ax2.clear()
+        ax2.plot(train_accuracies, label='Training Accuracy')
+        ax2.plot(val_accuracies, label='Validation Accuracy')
+        ax2.set_xlabel('Epochs')
+        ax2.set_ylabel('Accuracy')
+        ax2.set_title('Training and Validation Accuracy')
+        ax2.legend()
+
         plt.draw()
         plt.pause(0.001)
-
-        print(f'Epoch {epoch+1}, Training Loss: {train_losses[-1]}, Validation Loss: {val_losses[-1]}')
 
     plt.ioff()  # Turn off interactive mode
     plt.show()
 
+
 # Example usage
 input_size = 9  # 3x3 Tic Tac Toe board flattened
-hidden_size = 20 #64  # Example size of hidden layer
+hidden_size = 512 #64  # Example size of hidden layer
 # with 64 neurons it wasn't able to generalize well on the validation set
 # with 20 it's better
 output_size = 9  # Assuming 3x3 action space
