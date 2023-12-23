@@ -5,7 +5,7 @@ sys.path.append(parent_dir)
 
 import numpy as np
 from reversi_board import ReversiBoard
-from players.reversi_players import RandomPlayer, HumanPlayer
+from players.reversi_players import RandomPlayer, HumanPlayer, OptimalPlayer
 import tkinter as tk
 from tkinter import messagebox
 import numpy as np
@@ -100,9 +100,9 @@ class ReversiGUI:
 
 def main():
     # Example game
-    player1 = RandomPlayer(1)
-    player2 = RandomPlayer(-1)
-    game = ReversiGUI(player1, player2, size=4)
+    player1 = OptimalPlayer(1, max_depth=7) # Depth 8 takes too long for size 6 boards
+    player2 = HumanPlayer(-1) 
+    game = ReversiGUI(player1, player2, size=6)
     game.play()
 
 if __name__ == "__main__":

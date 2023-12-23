@@ -32,33 +32,29 @@ class RandomPlayer(ReversiPlayer):
         return random.choice(moves) if moves else (None, None)
 
 # Optimal player
+import random
+
 class OptimalPlayer:
-    def __init__(self, symbol):
+    def __init__(self, symbol, max_depth=4):
         self.symbol = symbol  # 1 for X, -1 for O
+        self.max_depth = max_depth
 
     def get_move(self, board):
-        if len(board.generate_possible_moves()) == 9:
-            return random.choice(board.generate_possible_moves())
-        else:
-            _, best_move = self.minimax(board, True)
-            return best_move
+        _, best_move = self.minimax(board, True, 0)
+        if best_move is None:
+            return random.choice(board.generate_possible_moves(self.symbol))
+        return best_move
 
-    def minimax(self, board, is_maximizing):
-        game_over, winner = board.is_game_over()
-        if game_over:
-            if winner == self.symbol:
-                return 1, None
-            elif winner == -self.symbol:
-                return -1, None
-            else:
-                return 0, None
+    def minimax(self, board, is_maximizing, depth):
+        if depth >= self.max_depth or board.is_game_over():
+            return self.evaluate_board(board), None
 
         if is_maximizing:
             best_score = float("-inf")
             best_move = None
-            for move in board.generate_possible_moves():
+            for move in board.generate_possible_moves(self.symbol):
                 new_board = board.make_move(*move, self.symbol)
-                score, _ = self.minimax(new_board, False)
+                score, _ = self.minimax(new_board, False, depth + 1)
                 if score > best_score:
                     best_score = score
                     best_move = move
@@ -66,10 +62,18 @@ class OptimalPlayer:
         else:
             best_score = float("inf")
             best_move = None
-            for move in board.generate_possible_moves():
+            for move in board.generate_possible_moves(-self.symbol):
                 new_board = board.make_move(*move, -self.symbol)
-                score, _ = self.minimax(new_board, True)
+                score, _ = self.minimax(new_board, True, depth + 1)
                 if score < best_score:
                     best_score = score
                     best_move = move
             return best_score, best_move
+
+    def evaluate_board(self, board):
+        # Simple evaluation function that counts the difference in pieces
+        winner, (count_player1, count_player2) = board.get_score()
+        if self.symbol == 1:
+            return count_player1 - count_player2 
+        else:
+            return count_player2 - count_player1

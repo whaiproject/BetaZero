@@ -5,7 +5,7 @@ sys.path.append(parent_dir)
 
 import numpy as np
 from reversi_board import ReversiBoard
-from players.reversi_players import RandomPlayer, HumanPlayer
+from players.reversi_players import RandomPlayer, HumanPlayer, OptimalPlayer
 
 class ReversiTerminal:
     def __init__(self, player1, player2, size=8):
@@ -34,24 +34,15 @@ class ReversiTerminal:
             game_over = self.board.is_game_over()
             self.current_player *= -1
 
-        print(self.board)
-        print("Game over!")
-        # Counting the disks
-        count_player1 = np.count_nonzero(self.board.board == 1)
-        count_player2 = np.count_nonzero(self.board.board == -1)
-        if count_player1 > count_player2:
-            print("Player X wins!")
-        elif count_player2 > count_player1:
-            print("Player O wins!")
-        else:
-            print("It's a tie!")
+        print(self.board, "\n")
+        self.board.get_score(print_result=True)
 
 
 
 def main():
     # Example game
     player1 = RandomPlayer(1)
-    player2 = HumanPlayer(-1)
+    player2 = RandomPlayer(-1)
     game = ReversiTerminal(player1, player2, size=4)
     game.play()
 

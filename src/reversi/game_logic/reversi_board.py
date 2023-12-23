@@ -64,6 +64,26 @@ class ReversiBoard:
                 return False
         return True
 
+    def get_score(self, print_result=False):
+        count_player1 = np.count_nonzero(self.board == 1)
+        count_player2 = np.count_nonzero(self.board == -1)
+
+        if count_player1 > count_player2:
+            winner = 1
+        elif count_player2 > count_player1:
+            winner = -1
+        else:
+            winner = 0
+
+        if print_result:
+            if winner == 0:
+                print(f"It's a tie! Player X: {count_player1}, Player O: {count_player2}")
+            else:
+                winner_symbol = 'X' if winner == 1 else 'O'
+                print(f"Player {winner_symbol} wins! Score - Player X: {count_player1}, Player O: {count_player2}")
+
+        return winner, (count_player1, count_player2)
+
     def generate_possible_moves(self, player):
         return [(i, j) for i in range(self.size) for j in range(self.size) if self.is_valid_move(i, j, player)]
 
