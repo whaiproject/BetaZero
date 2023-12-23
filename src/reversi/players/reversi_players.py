@@ -31,8 +31,6 @@ class RandomPlayer(ReversiPlayer):
         moves = board.generate_possible_moves(self.symbol)
         return random.choice(moves) if moves else (None, None)
 
-# Optimal player
-import random
 
 class OptimalPlayer:
     def __init__(self, symbol, max_depth=4):
