@@ -52,7 +52,7 @@ def main():
     # Example game
     player1 = RandomPlayer(1)
     player2 = HumanPlayer(-1)
-    game = ReversiTerminal(player1, player2, size=3)
+    game = ReversiTerminal(player1, player2, size=4)
     game.play()
 
 if __name__ == "__main__":

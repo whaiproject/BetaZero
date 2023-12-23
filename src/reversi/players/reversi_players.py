@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import random
+import time
 
 class ReversiPlayer(ABC):
     @abstractmethod
@@ -27,7 +28,6 @@ class RandomPlayer(ReversiPlayer):
         self.symbol = symbol  # 1 for X, -1 for O
 
     def get_move(self, board):
-        import random
         moves = board.generate_possible_moves(self.symbol)
         return random.choice(moves) if moves else (None, None)
 
