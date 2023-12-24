@@ -204,11 +204,11 @@ print("Done!")
 current_timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
 # Model filename with current timestamp
-model_filename = f'src/tic_tac_toe/SL/models/tic_tac_toe_model_{current_timestamp}.pth'
+model_filename = f'src/tic_tac_toe/models/tic_tac_toe_model_{current_timestamp}.pth'
 
 # Create the 'models' directory if it doesn't exist
-if not os.path.exists('src/tic_tac_toe/SL/models/'):
-    os.makedirs('src/tic_tac_toe/SL/models/')
+if not os.path.exists('src/tic_tac_toe/models/'):
+    os.makedirs('src/tic_tac_toe/models/')
 
 # Assuming 'model' is your trained model instance
 torch.save(model, model_filename)

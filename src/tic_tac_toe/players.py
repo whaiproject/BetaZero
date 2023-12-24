@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from tic_tac_toe_board import TicTacToeBoard 
 import random
 import torch
+#from SL import neural_networks
 
 class Player(ABC):
     @abstractmethod

@@ -54,7 +54,7 @@ def save_to_csv(states, actions, filename='tic_tac_toe_data.csv'):
     df.to_csv(filename, index=False)
 
 # Example usage
-num_games = 20
+num_games = 4
 player1 = OptimalPlayer(1)
 player2 = OptimalPlayer(-1)
 all_states, all_actions = collect_game_data(num_games, player1, player2)
