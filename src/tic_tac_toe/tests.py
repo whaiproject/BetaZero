@@ -1,5 +1,5 @@
 from tic_tac_toe import TicTacToeTerminal, TicTacToeGUI
-from players import HumanPlayer, AIPlayer, RandomPlayer, OptimalPlayer
+from ttt.players import HumanPlayer, AIPlayer, RandomPlayer, OptimalPlayer
 
 # Initialize players (modify as needed)
 player2 = AIPlayer(
