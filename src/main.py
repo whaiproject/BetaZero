@@ -6,6 +6,10 @@ import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.data import TensorDataset
+from torch.utils.data import DataLoader
+import pickle
+import os
 
 
 class MCTSNode:
@@ -206,7 +210,7 @@ class BetaZeroPlayer(Player):
             Ns[move_index] = child.N
             nodes[move_index] = child
 
-        probs = dist(Ns) # dist is a function that returns a probability distribution over the nodes
+        probs = dist(Ns, tau=1) # dist is a function that returns a probability distribution over the nodes
         self.probs_list.append(probs)
         next_node = np.random.choice(nodes, p=probs)
         move = next_node.move
@@ -231,62 +235,82 @@ def dist(x, tau=1):
         return probs
     return np.power(x, 1 / tau) / np.sum(np.power(x, 1 / tau))
 
-player1 = BetaZeroPlayer( 1, verbose=False)
-player2 = BetaZeroPlayer(-1, verbose=False)
 
-# Initialize the terminal game manager
-terminal_game_manager = TicTacToeHeadless(player1, player2)
-states, _, result = terminal_game_manager.play()
-probs1 = player1.probs_list
-probs2 = player2.probs_list
-probs = [torch.tensor(item) for pair in zip(probs1, probs2) for item in pair]
-# Extend with the remaining elements from the longer list
-if len(probs1) > len(probs2):
-    probs.extend(torch.tensor(probs1[len(probs2):]))
-else:
-    probs.extend(torch.tensor(probs2[len(probs1):]))
 
-game_data = [states, probs, result]
+def initialize_players():
+    """Initializes and returns two players for the game."""
+    player1 = BetaZeroPlayer(1, verbose=False)
+    player2 = BetaZeroPlayer(-1, verbose=False)
+    return player1, player2
 
-print("Probs: ")
-print(probs)
+def play_game(player1, player2):
+    """Plays a game and returns the game states, and result."""
+    game_manager = TicTacToeHeadless(player1, player2)
+    states, _, result = game_manager.play()
+    return states, result
 
-def prepare_training_data(game_data):
-    states, probs, result = game_data[0], game_data[1], game_data[2]
+def process_probabilities(probs1, probs2):
+    """Interleaves and processes two lists of probabilities."""
+    probs = [torch.tensor(item) for pair in zip(probs1, probs2) for item in pair]
+    probs.extend(torch.tensor(probs1[len(probs2):] if len(probs1) > len(probs2) else probs2[len(probs1):]))
+    return probs
 
-    # Convert states to tensor format
-    # add alternating player perspective
+def prepare_training_data(states, probs, result):
+    """Prepares and returns game data for training."""
     state_tensors = [convert_state_to_tensor(state, player_perpective=-(2*(i%2)-1)) for i, state in enumerate(states)]
-
-    # # One-hot encode the moves
-    # move_labels = [torch.zeros(9, dtype=torch.float32) for _ in moves]
-    # for label, move in zip(move_labels, moves):
-    #     #print(move)
-    #     row, col = move
-    #     index = row * 3 + col
-    #     label[index] = 1.0
-
-    # Convert results to tensor format
-    #result_tensors = [torch.tensor([result], dtype=torch.float32) for result in results]
-    #result_tensors = [result * player for result, player in zip(result_tensors, [1, -1] * (len(state_tensors) // 2))]
     result_tensors = [torch.tensor([result * (-1)**i], dtype=torch.float32) for i in range(len(state_tensors))]
-
-    # Stack all tensors
     state_tensors = torch.stack(state_tensors)
     probs_tensors = torch.stack(probs)
     result_tensors = torch.stack(result_tensors)
-
     return state_tensors, probs_tensors, result_tensors
 
-print("x"*45)
-# Example usage
-res = prepare_training_data(game_data)
-print(res)
+def simulate_and_prepare_game_data():
+    """Simulates a game and prepares the data for training."""
+    player1, player2 = initialize_players()
+    states, result = play_game(player1, player2)
+    probs = process_probabilities(player1.probs_list, player2.probs_list)
+    return prepare_training_data(states, probs, result)
 
-print(game_data[2])
+def perform_simulations(num_games):
+    all_states, all_probs, all_results = [], [], []
 
-# player1 = RandomPlayer()
-# player2 = BetaZeroPlayer(-1, verbose=False)
-# # Initialize the terminal game manager
-# terminal_game_manager = TicTacToeTerminal(player1, player2)
-# game_data = terminal_game_manager.play()
+    for _ in range(num_games):
+        states, probs, results = simulate_and_prepare_game_data()
+
+        # Flatten and align each data point (state, probability, result)
+        for state, prob, result in zip(states, probs, results):
+            all_states.append(state)
+            all_probs.append(prob)
+            all_results.append(result)
+
+    return all_states, all_probs, all_results
+
+# Example Usage
+num_games = 5
+all_states, all_probs, all_results = perform_simulations(num_games)
+
+
+# Convert the lists to tensors
+all_states_tensor = torch.stack(all_states)
+all_probs_tensor = torch.stack(all_probs)
+all_results_tensor = torch.stack(all_results)
+
+# Create a TensorDataset
+dataset = TensorDataset(all_states_tensor, all_probs_tensor, all_results_tensor)
+
+# Now dataset can be used for model training
+print("Dataset Length:", len(dataset))
+
+
+# Number of samples to display
+num_samples_to_display = len(dataset)
+
+# Display the first few samples from the dataset
+for i in range(num_samples_to_display):
+    state, prob, result = dataset[i]
+    print(f"Sample {i+1}:")
+    print("State:\n", state)
+    print("Probability:\n", prob)
+    print("Result:\n", result)
+    print("-" * 30)
+
