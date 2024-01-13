@@ -1,42 +1,49 @@
 import tkinter as tk
 from tkinter import messagebox
-from players import HumanPlayer, AIPlayer
-from tic_tac_toe_board import TicTacToeBoard
+from ttt.tic_tac_toe_board import TicTacToeBoard
 
 class TicTacToeHeadless:
     def __init__(self, player1, player2):
         self.board = TicTacToeBoard()
         self.players = {1: player1, -1: player2}
         self.current_player = 1
-        self.game_positions = []  # Store board positions after each move
 
     def play(self):
         game_over, winner = False, None
+        game_states = []  # Store board positions after each move
+        game_moves = []   # Store moves made by players
 
         while not game_over:
-            self.game_positions.append(self.board.board)
             player = self.players[self.current_player]
-            row, col = player.get_move(self.board)
+
+            # The current board state
+            current_board_state = self.board.board
+
+            # Use the player's get_move method (which uses MCTS)
+            move = player.get_move(self.board)
 
             try:
-                self.board = self.board.make_move(row, col, self.current_player)
+                self.board = self.board.make_move(move, self.current_player)
+                game_states.append(current_board_state)  # Store the state
+                game_moves.append(move)             # Store the move
             except ValueError as e:
                 raise ValueError(f"Invalid move: {e}")
 
-            game_over, winner = self.board.is_game_over()
+            game_over = self.board.is_game_over()
             self.current_player *= -1
+        
+        winner = self.board.get_game_result()
 
-            if game_over:
-                self.game_positions.append(self.board.board)  # Final position
-                #if winner != 0:
-                #    winning_player = 'X' if winner == 1 else 'O'
+        return game_states, game_moves, winner
 
-        return self.game_positions, winner
 
 
 class TicTacToeTerminal:
-    def __init__(self, player1, player2):
-        self.board = TicTacToeBoard()
+    def __init__(self, player1, player2, board=None):
+        if board is None:
+            self.board = TicTacToeBoard()
+        else:
+            self.board = board
         self.players = {1: player1, -1: player2}
         self.current_player = 1
 
@@ -46,18 +53,19 @@ class TicTacToeTerminal:
         while not game_over:
             print(self.board, "\n")
             player = self.players[self.current_player]
-            row, col = player.get_move(self.board)
+            move = player.get_move(self.board)
             
             try:
-                self.board = self.board.make_move(row, col, self.current_player)
+                self.board = self.board.make_move(move, self.current_player)
             except ValueError as e:
                 print(e)
                 continue
 
-            game_over, winner = self.board.is_game_over()
+            game_over = self.board.is_game_over()
             self.current_player *= -1
 
             if game_over:
+                winner = self.board.get_game_result()
                 print(self.board)
                 if winner == 0:
                     print("It's a tie!")

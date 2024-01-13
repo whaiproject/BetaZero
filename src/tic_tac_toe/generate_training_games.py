@@ -4,7 +4,7 @@ parent_dir = str(Path(__file__).resolve().parent.parent)
 sys.path.append(parent_dir)
 
 from tic_tac_toe import TicTacToeHeadless
-from players import HumanPlayer, AIPlayer, RandomPlayer, OptimalPlayer
+from ttt.players import HumanPlayer, AIPlayer, RandomPlayer, OptimalPlayer
 import numpy as np
 import torch
 import pandas as pd
