@@ -14,7 +14,7 @@ class MCTSNode:
         self.N = 0  # Visit count
         self.W = 0  # Total value
         self.Q = 0  # Mean value
-        self.c = 0.3 #0.5  # Exploration constant
+        self.c = 0.3 #0.3  # Exploration constant
         self.P = prob  # Prior probability
         self.depth = 0 if parent is None else parent.depth + 1
         self.player = player if player else -self.parent.player
@@ -25,7 +25,7 @@ class MCTSNode:
         while current_node.children:
             current_node = max(
                 current_node.children, 
-                key=lambda node: node.Q + self.c * 1 * np.sqrt(node.parent.N) / (1 + node.N)
+                key=lambda node: node.Q + self.c * self.P * np.sqrt(node.parent.N) / (1 + node.N)
             )
         return current_node
 
@@ -93,7 +93,17 @@ class MCTSNode:
                 probs, _ = node.evaluate(network)  # Get probabilities
                 node.expand(probs)
 
-            result = node.evaluate(network)[1]  # Get value
+            # shouldn't we use the actual result herer?
+            # the network is never trained on terminated positions
+            # so it will never learn to predict the result
+            # of an already ended game
+            # I was effectively using trash evaluations at many
+            # leaf nodes of the MCTS
+            
+            if node.game_state.is_game_over():
+                result = node.game_state.get_game_result()
+            else:
+                result = node.evaluate(network)[1]  # Get value # I am also doing the forward pass twice which is inefficient
             node.backpropagate(result)
 
     def get_best_child(self):
