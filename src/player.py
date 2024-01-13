@@ -4,14 +4,15 @@ from mcts import MCTSNode
 from utils import dist
 
 class BetaZeroPlayer(Player):
-    def __init__(self, player, model, verbose=False):
+    def __init__(self, player, model, tau=0., verbose=False):
         super().__init__()
         self.player = player
         self.root_node = None
-        self.simulations_per_turn = 25
+        self.simulations_per_turn = 10
         self.verbose = verbose
         self.probs_list = []
         self.model = model
+        self.tau = tau
 
     def get_move(self, board):
         # Initialize or update the root node
@@ -34,7 +35,7 @@ class BetaZeroPlayer(Player):
             nodes[move_index] = child
 
         # Get move probabilities and choose the next node
-        probs = dist(Ns, tau=0.)  # Assume dist is a predefined function
+        probs = dist(Ns, tau=self.tau)  # Assume dist is a predefined function
         self.probs_list.append(probs)
         next_node = np.random.choice(nodes, p=probs)
         move = next_node.move
